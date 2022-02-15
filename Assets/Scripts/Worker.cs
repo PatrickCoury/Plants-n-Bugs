@@ -47,8 +47,11 @@ public class Worker : MonoBehaviour
        
         if (harvesting && Vector3.Distance(transform.position,nVein.transform.position) < 1.25)
         {
-            
-            if(!carrying)StartCoroutine(harvestLoop());
+
+            if (!carrying)
+            {
+                StartCoroutine(harvestLoop());
+            }
             else
             {
                 pu.navMeshAgent.destination = closestHill.transform.position;
@@ -70,14 +73,29 @@ public class Worker : MonoBehaviour
     }
     IEnumerator harvestLoop()
     {
+        Nutrients nutrients = nVein.GetComponent<Nutrients>();
+        while (nutrients.occupied)
+        {
+            foreach(GameObject vein in nutrients.adjVeins)
+            {
+                if (!vein.GetComponent<Nutrients>().occupied)
+                {
+                    nVein = vein;
+                    pu.navMeshAgent.destination = vein.transform.position;
+                    yield break;
+                }
+            }
+            yield return new WaitForSeconds(.5f);
+        }
+        nutrients.occupied = true;
             harvesting = false;
             pu.navMeshAgent.destination = transform.position;
             yield return new WaitForSeconds(5);
 
-            if (nVein.GetComponent<Nutrients>().nutrientsLeft > 0&& Vector3.Distance(pu.navMeshAgent.destination,transform.position)<=1)
+            if (nutrients.nutrientsLeft > 0&& Vector3.Distance(pu.navMeshAgent.destination,transform.position)<=1)
             {
              
-                hit.transform.gameObject.GetComponent<Nutrients>().nutrientsLeft--;//subtract a nutrient
+                nutrients.nutrientsLeft--;//subtract a nutrient
                 carrying = true;
                 pu.navMeshAgent.destination = closestHill.transform.position;
                 
